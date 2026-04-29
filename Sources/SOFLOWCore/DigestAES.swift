@@ -16,9 +16,10 @@ public enum DigestAES {
     private static func crypt(input: Data, key: Data, op: Int) throws -> Data {
         var outLen = 0
         var output = Data(count: input.count + kCCBlockSizeAES128)
-        let status = output.withUnsafeMutableBytes { outBytes in
-            input.withUnsafeBytes { inBytes in
-                key.withUnsafeBytes { keyBytes in
+        let outputCapacity = output.count  // capture before mutating-closure
+        let status = output.withUnsafeMutableBytes { outBytes -> Int32 in
+            input.withUnsafeBytes { inBytes -> Int32 in
+                key.withUnsafeBytes { keyBytes -> Int32 in
                     CCCrypt(
                         CCOperation(op),
                         CCAlgorithm(kCCAlgorithmAES),
@@ -26,7 +27,7 @@ public enum DigestAES {
                         keyBytes.baseAddress, key.count,
                         nil,
                         inBytes.baseAddress, input.count,
-                        outBytes.baseAddress, output.count,
+                        outBytes.baseAddress, outputCapacity,
                         &outLen
                     )
                 }
