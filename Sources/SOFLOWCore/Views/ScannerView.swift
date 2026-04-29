@@ -1,7 +1,3 @@
-// ScannerView.swift
-// SwiftUI port of SO ONE-PLUS / Modify-BLE main scan screen.
-// Equivalent of MainActivity / FactoryActivity device list.
-
 import SwiftUI
 import CoreBluetooth
 
@@ -12,28 +8,26 @@ public struct ScannerView: View {
     public init() {}
 
     public var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                statusBar
-                deviceList
-            }
-            .navigationTitle("SOFLOW")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: { ble.startScan() }) {
-                        Label("Scan", systemImage: "arrow.clockwise")
-                    }
-                    .disabled(ble.state != .poweredOn)
-                }
-            }
-            .onAppear { ble.startScan() }
+        VStack(spacing: 0) {
+            statusBar
+            deviceList
         }
+        .navigationTitle("SOFLOW")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: { ble.startScan() }) {
+                    Label("Scan", systemImage: "arrow.clockwise")
+                }
+                .disabled(ble.state != .poweredOn)
+            }
+        }
+        .onAppear { ble.startScan() }
     }
 
     private var statusBar: some View {
         HStack {
             Circle()
-                .fill(ble.state == .poweredOn ? .green : .red)
+                .fill(ble.state == .poweredOn ? Color.green : Color.red)
                 .frame(width: 10, height: 10)
             Text(stateLabel).font(.footnote).foregroundStyle(.secondary)
             Spacer()
@@ -75,5 +69,3 @@ public struct ScannerView: View {
         }
     }
 }
-
-#Preview { ScannerView()

@@ -1,7 +1,3 @@
-// MainView.swift
-// Replacement for com.ble.soflow.MainActivity (Android). Hub screen with
-// navigation to all the sub-tools the Android app exposes.
-
 import SwiftUI
 
 public struct MainView: View {

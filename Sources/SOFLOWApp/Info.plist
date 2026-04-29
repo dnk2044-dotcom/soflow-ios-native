@@ -33,18 +33,12 @@
     <array>
         <string>UIInterfaceOrientationPortrait</string>
     </array>
-
-    <!-- Bluetooth permission strings — MUST be present or iOS will reject the BLE prompts. -->
     <key>NSBluetoothAlwaysUsageDescription</key>
     <string>SOFLOW uses Bluetooth to communicate with your scooter.</string>
     <key>NSBluetoothPeripheralUsageDescription</key>
     <string>SOFLOW uses Bluetooth to communicate with your scooter.</string>
-
-    <!-- Local-network: needed for AltStore refresh and FOTA over WiFi -->
     <key>NSLocalNetworkUsageDescription</key>
     <string>Used by AltStore for in-place re-signing.</string>
-
-    <!-- App Transport Security — the SOFLOW backend at 47.52.238.166 is plain HTTP. -->
     <key>NSAppTransportSecurity</key>
     <dict>
         <key>NSExceptionDomains</key>
@@ -62,7 +56,6 @@
             </dict>
         </dict>
     </dict>
-
     <key>UIBackgroundModes</key>
     <array>
         <string>bluetooth-central</string>

@@ -1,7 +1,3 @@
-// SettingsView.swift
-// Replacement for the SettingsActivity in the Android codebase. Sends
-// AES-encrypted commands directly via BleDataOperateManage.
-
 import SwiftUI
 
 public struct SettingsView: View {
@@ -90,18 +86,15 @@ public struct SettingsView: View {
         }
         .navigationTitle("Scooter Settings")
         .onAppear {
-            // ask the scooter to send a state frame to populate sliders
             ble.send { BleDataOperateManage.query() }
         }
     }
 }
 
-// MARK: - Other top-level views (placeholders that compile)
-
 public struct FactoryView: View {
     public init() {}
     public var body: some View {
-        Text("Factory tools — needs DT* parsers ported.\nSee BUILD-VOLLPORT.md for status.")
+        Text("Factory tools — needs DT* parsers ported.")
             .padding()
             .navigationTitle("Factory")
     }
@@ -110,7 +103,7 @@ public struct FactoryView: View {
 public struct QueryView: View {
     public init() {}
     public var body: some View {
-        Text("Query / Records — needs DTQueryUnlockRecordsParser port.\nSee BUILD-VOLLPORT.md.")
+        Text("Query / Records — needs DTQueryUnlockRecordsParser port.")
             .padding()
             .navigationTitle("Query")
     }
@@ -122,15 +115,15 @@ public struct FaultView: View {
     public var body: some View {
         List {
             if let s = ble.lastState {
-                if s.faultBrake         { Text("⚠️ Brake fault") }
-                if s.faultController    { Text("⚠️ Controller fault") }
-                if s.faultMotor         { Text("⚠️ Motor fault") }
-                if s.faultCommunication { Text("⚠️ Communication fault") }
-                if s.stealingAlert      { Text("⚠️ Stealing alert / anti-theft") }
-                if s.transferFault      { Text("⚠️ Transfer fault") }
+                if s.faultBrake         { Text("Brake fault") }
+                if s.faultController    { Text("Controller fault") }
+                if s.faultMotor         { Text("Motor fault") }
+                if s.faultCommunication { Text("Communication fault") }
+                if s.stealingAlert      { Text("Stealing alert / anti-theft") }
+                if s.transferFault      { Text("Transfer fault") }
                 if !s.faultBrake && !s.faultController && !s.faultMotor &&
                    !s.faultCommunication && !s.stealingAlert && !s.transferFault {
-                    Text("✅ No active faults").foregroundColor(.green)
+                    Text("No active faults").foregroundColor(.green)
                 }
             } else {
                 Text("Connect to a scooter and wait for state notifications.")
@@ -145,9 +138,9 @@ public struct PermissionView: View {
     public init() {}
     public var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("Bluetooth — required", systemImage: "bluetooth")
+            Label("Bluetooth — required", systemImage: "antenna.radiowaves.left.and.right")
             Label("Local Network — for AltStore refresh", systemImage: "wifi")
-            Text("On iOS 13+, location is NOT required for BLE — unlike Android.")
+            Text("On iOS 13+, location is NOT required for BLE.")
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -176,7 +169,7 @@ public struct FOTAView: View {
     public init() {}
     public var body: some View {
         Text("FOTA flow — please use the separate Cordova-FOTA app for now.\n\n" +
-             "Native CoreBluetooth FOTA implementation pending — see BUILD-VOLLPORT.md.")
+             "Native CoreBluetooth FOTA implementation pending.")
             .padding()
             .multilineTextAlignment(.center)
             .navigationTitle("Firmware Update")

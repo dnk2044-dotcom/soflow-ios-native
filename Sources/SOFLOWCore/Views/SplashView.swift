@@ -1,8 +1,3 @@
-// SplashView.swift
-// Replacement for com.ble.soflow.SplashActivity (Android).
-// On Android: 2-second logo, then jumps to LoginActivity if no token,
-//             else MainActivity. Also calls DataConstant.setFactory(2).
-
 import SwiftUI
 
 public struct SplashView: View {
@@ -32,9 +27,7 @@ public struct SplashView: View {
             }
         }
         .onAppear {
-            // Mirrors Android SplashActivity: setFactory(2) for SO ONE-PLUS
             ble.setFactory(.walkiz)
-
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 didNavigate = true
             }

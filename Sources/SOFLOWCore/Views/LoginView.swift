@@ -1,10 +1,3 @@
-// LoginView.swift
-// Replacement for com.ble.soflow.LoginActivity. The Android app posts
-// username/password to {baseURL}/loginV. This view is opt-in: the Modify-
-// BLE-Name flow and the BLE control commands work fully offline (the
-// AES master key is hardcoded). Server login is only required for fleet
-// management features (UnlockRecords, TPMS history) which we don't port.
-
 import SwiftUI
 
 public struct LoginView: View {

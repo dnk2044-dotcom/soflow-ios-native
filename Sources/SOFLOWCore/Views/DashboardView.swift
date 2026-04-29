@@ -1,8 +1,3 @@
-// DashboardView.swift
-// Live ride dashboard — equivalent to the Android MainActivity once a
-// scooter is connected. Shows the parsed MPStateData (via MPStateParser)
-// and refreshes every notify frame the scooter sends.
-
 import SwiftUI
 
 public struct DashboardView: View {
@@ -29,8 +24,6 @@ public struct DashboardView: View {
             ble.send { BleDataOperateManage.query() }
         }
     }
-
-    // MARK: - Tiles
 
     private func speedTile(_ s: MPStateData) -> some View {
         tileBackground {
@@ -85,7 +78,7 @@ public struct DashboardView: View {
                 row("Comm L/R",    "\(s.communicationLeft) / \(s.communicationRight)")
                 row("Dark mode",   "\(s.darkMode)")
                 if s.faultBrake || s.faultController || s.faultMotor {
-                    Text("⚠️ One or more faults — check the Faults screen.")
+                    Text("One or more faults — check the Faults screen.")
                         .foregroundColor(.red)
                         .font(.caption)
                 }
@@ -104,8 +97,6 @@ public struct DashboardView: View {
             }.padding()
         }
     }
-
-    // MARK: - Bits
 
     private func tileBackground<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         content()

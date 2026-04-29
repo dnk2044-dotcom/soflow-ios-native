@@ -1,32 +1,4 @@
 // MPStateParser.swift
-// Port of com.inuker.bluetooth.bledata.mpControlData.parser.MPStateParser
-//
-// Decodes a notify-frame into MPStateData. The scooter emits one of
-// these every ~250 ms while connected. Frame layout, field by field
-// (matching the Java source exactly):
-//
-//   byte  0: total length echo
-//   byte  1: factoryCode
-//   byte  2: status bitfield:
-//              bit0      = lampStatus
-//              bits 1-3  = speedMode
-//              bit4      = unit (mph vs km/h)
-//              bits 5-6  = modifyMode
-//              bit7      = lockStatus
-//   bytes 3-4: speed (BE)
-//   bytes 5-6: battery_voltage (BE)
-//   bytes 7-8: battery_current (BE)
-//   byte  9:   fault byte 1 (brake/controller/motor/comm/stealing/transfer/sys)
-//   if len > 25: bytes 10-12 are fault bytes 2/3/4 (24 fault bits)
-//   one byte commLR, one displayLR, one cpuLR — each split top/bottom nibble
-//   bytes for distanceSingle (BE), distanceAll (BE)
-//   byte remainingCharge
-//   3 bytes singleRideTime
-//   byte darkMode
-//   byte expectedChecksum
-//
-// Checksum = sum-mod-256 of all the read-bytes. If mismatch, return nil.
-
 import Foundation
 
 public enum MPStateParser {
@@ -99,17 +71,13 @@ public enum MPStateParser {
 
         let remainingCharge = p.readByte()
 
-        // Skip to the right offset for the 3-byte ride timer
         let timerOffset = item.len == 25 ? 18 : 21
         let singleRideTime = item.len > timerOffset + 2
             ? p.getInt3(item.bytes, at: timerOffset) : 0
 
-        // Skip to dark mode + checksum bytes
-        // (Java reads several intermediate bytes; we re-walk via cursor)
         let darkMode = p.readByte()
         let checksumByte = p.readByte()
 
-        // Compute the checksum the Java way: sum of all the named bytes
         let computed =
             item.len + lengthEcho + factoryCode + sb1 + sb2 +
             bv1 + bv2 + bc1 + bc2 + faultByte1 +
@@ -157,7 +125,6 @@ public enum MPStateParser {
 public enum MPSwitchParser {
     public static var lastWasSuccess = false
 
-    /// Mirrors Java MPSwitchParser.parser — returns the ack reply.
     public static func parse(_ item: BeaconItem) -> MPSwitchData? {
         let p = BeaconParser(item)
         let len = item.len
@@ -166,7 +133,7 @@ public enum MPSwitchParser {
 
         let operand: Int
         let opSum: Int
-        if cmd == 170 { // 0xAA = long-form command
+        if cmd == 170 {
             let b1 = p.readByte()
             let b2 = p.readByte()
             opSum = b1 + b2

@@ -1,7 +1,3 @@
-// MPSwitchData.swift
-// Port of com.inuker.bluetooth.bledata.mpControlData.model.MPSwitchData
-// Holds a single switch / on-off command + ack response.
-
 import Foundation
 
 public struct MPSwitchData: Equatable {

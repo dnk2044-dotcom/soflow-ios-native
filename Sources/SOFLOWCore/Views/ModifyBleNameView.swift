@@ -1,9 +1,3 @@
-// ModifyBleNameView.swift
-// Functional equivalent of the entire "Modify BLE Name" Android app
-// (com.soflow.modify) — connect to a scooter, write a new BLE
-// advertised name, disconnect. Uses BleDataOperateManage.changeBleName,
-// which encrypts to two AES blocks (64 hex chars padded) per the Java code.
-
 import SwiftUI
 
 public struct ModifyBleNameView: View {
@@ -34,7 +28,7 @@ public struct ModifyBleNameView: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(newName.isEmpty || newName.utf8.count > 26 || ble.connected == nil)
             } footer: {
-                Text("Most SOFLOW firmwares accept a 1–26 char ASCII name. The scooter will reboot the BLE stack and re-advertise under the new name.")
+                Text("Most SOFLOW firmwares accept a 1-26 char ASCII name. The scooter will reboot the BLE stack and re-advertise under the new name.")
                     .font(.footnote)
             }
 
@@ -47,3 +41,9 @@ public struct ModifyBleNameView: View {
         .navigationTitle("Modify BLE Name")
     }
 
+    private func writeName() {
+        let data = BleDataOperateManage.changeBleName(newName)
+        ble.writeRaw(data)
+        status = "Wrote \(data.count) bytes (\(HexParser.bytesToHexString(data)))"
+    }
+}
