@@ -24,8 +24,6 @@ targets:
       - path: Sources/SOFLOWApp
         excludes:
           - Info.plist
-    info:
-      path: Sources/SOFLOWApp/Info.plist
     dependencies:
       - package: SOFLOWCore
         product: SOFLOWCore
@@ -34,5 +32,6 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.dean.soflow
         PRODUCT_NAME: SOFLOW
         INFOPLIST_FILE: Sources/SOFLOWApp/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
