@@ -1,0 +1,73 @@
+name: Build native iOS IPA (unsigned)
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    env:
+      DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate xcodeproj from project.yml
+        run: xcodegen generate
+
+      - name: Build unsigned .app
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project SOFLOW.xcodeproj \
+            -scheme SOFLOW \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE="" \
+            DEVELOPMENT_TEAM="" \
+            ONLY_ACTIVE_ARCH=NO \
+            clean build
+
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+          APP=$(find build/DerivedData/Build/Products/Release-iphoneos -maxdepth 2 -name "*.app" | head -n 1)
+          if [ -z "$APP" ]; then
+            echo "ERROR: No .app produced — check build step."
+            exit 1
+          fi
+          echo "Found .app: $APP"
+          mkdir -p out/Payload
+          cp -R "$APP" out/Payload/
+          cd out
+          zip -qry "SOFLOW-native-unsigned.ipa" Payload
+          ls -lh SOFLOW-native-unsigned.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SOFLOW-native-unsigned-ipa
+          path: out/SOFLOW-native-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 90

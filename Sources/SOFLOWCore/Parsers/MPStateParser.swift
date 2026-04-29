@@ -1,0 +1,192 @@
+// MPStateParser.swift
+// Port of com.inuker.bluetooth.bledata.mpControlData.parser.MPStateParser
+//
+// Decodes a notify-frame into MPStateData. The scooter emits one of
+// these every ~250 ms while connected. Frame layout, field by field
+// (matching the Java source exactly):
+//
+//   byte  0: total length echo
+//   byte  1: factoryCode
+//   byte  2: status bitfield:
+//              bit0      = lampStatus
+//              bits 1-3  = speedMode
+//              bit4      = unit (mph vs km/h)
+//              bits 5-6  = modifyMode
+//              bit7      = lockStatus
+//   bytes 3-4: speed (BE)
+//   bytes 5-6: battery_voltage (BE)
+//   bytes 7-8: battery_current (BE)
+//   byte  9:   fault byte 1 (brake/controller/motor/comm/stealing/transfer/sys)
+//   if len > 25: bytes 10-12 are fault bytes 2/3/4 (24 fault bits)
+//   one byte commLR, one displayLR, one cpuLR — each split top/bottom nibble
+//   bytes for distanceSingle (BE), distanceAll (BE)
+//   byte remainingCharge
+//   3 bytes singleRideTime
+//   byte darkMode
+//   byte expectedChecksum
+//
+// Checksum = sum-mod-256 of all the read-bytes. If mismatch, return nil.
+
+import Foundation
+
+public enum MPStateParser {
+    public static func parse(_ item: BeaconItem) -> MPStateData? {
+        guard item.len >= 20 else { return nil }
+        let p = BeaconParser(item)
+
+        let lengthEcho = p.readByte()
+        let factoryCode = p.readByte()
+        let status     = p.readByte()
+        let statusByte = status & 0xFF
+
+        let lampStatus  = p.getBit(status, 0)
+        let speedMode   = p.getBits(statusByte, 1, 3)
+        let unit        = p.getBit(status, 4)
+        let modifyMode  = p.getBits(statusByte, 5, 6)
+        let lockStatus  = p.getBit(status, 7)
+
+        let sb1 = p.readByte()
+        let sb2 = p.readByte()
+        let speed = p.readShort(sb1, sb2)
+
+        let bv1 = p.readByte(); let bv2 = p.readByte()
+        let bc1 = p.readByte(); let bc2 = p.readByte()
+        let batteryVoltage = p.readShort(bv1, bv2)
+        let batteryCurrent = p.readShort(bc1, bc2)
+
+        let faultByte1 = p.readByte()
+
+        let faultByte2: Int
+        let faultByte3: Int
+        let faultByte4: Int
+        if item.len == 25 {
+            faultByte2 = 0; faultByte3 = 0; faultByte4 = 0
+        } else {
+            faultByte2 = p.readByte()
+            faultByte3 = p.readByte()
+            faultByte4 = p.readByte()
+        }
+
+        let comm = p.readByte() & 0xFF
+        let communicationRight = p.getBits(comm, 0, 4)
+        let communicationLeft  = p.getBits(comm, 4, 8)
+
+        let display = p.readByte() & 0xFF
+        let displayRight = p.getBits(display, 0, 4)
+        let displayLeft  = p.getBits(display, 4, 8)
+
+        let cpu = p.readByte() & 0xFF
+        let cpuRight = p.getBits(cpu, 0, 4)
+        let cpuLeft  = p.getBits(cpu, 4, 8)
+
+        let ds1 = p.readByte(); let ds2 = p.readByte()
+        let da1 = p.readByte(); let da2 = p.readByte()
+        let distanceSingle = p.readShort(ds1, ds2)
+        let distanceAll    = p.readShort(da1, da2)
+
+        let faultBrake         = p.getBit(faultByte1, 0)
+        let faultController    = p.getBit(faultByte1, 1)
+        let faultMotor         = p.getBit(faultByte1, 2)
+        let faultCommunication = p.getBit(faultByte1, 3)
+        let stealingAlert      = p.getBit(faultByte1, 4)
+        let transferFault      = p.getBit(faultByte1, 5)
+        let systemStatus       = p.getBit(faultByte1, 6)
+
+        var faults = [Bool](repeating: false, count: 24)
+        for i in 0..<8 { faults[i]      = p.getBit(faultByte2, i) }
+        for i in 0..<8 { faults[8 + i]  = p.getBit(faultByte3, i) }
+        for i in 0..<8 { faults[16 + i] = p.getBit(faultByte4, i) }
+
+        let remainingCharge = p.readByte()
+
+        // Skip to the right offset for the 3-byte ride timer
+        let timerOffset = item.len == 25 ? 18 : 21
+        let singleRideTime = item.len > timerOffset + 2
+            ? p.getInt3(item.bytes, at: timerOffset) : 0
+
+        // Skip to dark mode + checksum bytes
+        // (Java reads several intermediate bytes; we re-walk via cursor)
+        let darkMode = p.readByte()
+        let checksumByte = p.readByte()
+
+        // Compute the checksum the Java way: sum of all the named bytes
+        let computed =
+            item.len + lengthEcho + factoryCode + sb1 + sb2 +
+            bv1 + bv2 + bc1 + bc2 + faultByte1 +
+            faultByte2 + faultByte3 + faultByte4 +
+            status + comm + display + cpu +
+            ds1 + ds2 + da1 + da2 +
+            remainingCharge + darkMode
+        let computedLast = computed & 0xFF
+
+        guard computedLast == checksumByte else { return nil }
+
+        var s = MPStateData()
+        s.speed              = speed
+        s.factoryCode        = factoryCode
+        s.lampStatus         = lampStatus
+        s.speedMode          = speedMode
+        s.unit               = unit
+        s.modifyMode         = modifyMode
+        s.lockStatus         = lockStatus
+        s.batteryVoltage     = batteryVoltage
+        s.batteryCurrent     = batteryCurrent
+        s.remainingCharge    = remainingCharge
+        s.distanceSingle     = distanceSingle
+        s.distanceAll        = distanceAll
+        s.communicationLeft  = communicationLeft
+        s.communicationRight = communicationRight
+        s.displayLeft        = displayLeft
+        s.displayRight       = displayRight
+        s.cpuLeft            = cpuLeft
+        s.cpuRight           = cpuRight
+        s.faultBrake         = faultBrake
+        s.faultController    = faultController
+        s.faultMotor         = faultMotor
+        s.faultCommunication = faultCommunication
+        s.stealingAlert      = stealingAlert
+        s.transferFault      = transferFault
+        s.systemStatus       = systemStatus
+        s.singleRideTime     = singleRideTime
+        s.darkMode           = darkMode
+        s.faults             = faults
+        return s
+    }
+}
+
+public enum MPSwitchParser {
+    public static var lastWasSuccess = false
+
+    /// Mirrors Java MPSwitchParser.parser — returns the ack reply.
+    public static func parse(_ item: BeaconItem) -> MPSwitchData? {
+        let p = BeaconParser(item)
+        let len = item.len
+        let cmd = p.readByte()
+        let result = p.readByte()
+
+        let operand: Int
+        let opSum: Int
+        if cmd == 170 { // 0xAA = long-form command
+            let b1 = p.readByte()
+            let b2 = p.readByte()
+            opSum = b1 + b2
+            operand = (b1 << 8) | b2
+        } else {
+            let single = p.readByte()
+            operand = single
+            opSum = single
+        }
+
+        let checksumByte = p.readByte()
+        let total = len + cmd + result + opSum
+        lastWasSuccess = (result == 0)
+
+        guard (total & 0xFF) == checksumByte else { return nil }
+
+        return MPSwitchData(
+            command: cmd,
+            operand: operand,
+            success: result == 0
+        )
+    }
+}

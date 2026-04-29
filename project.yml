@@ -1,0 +1,49 @@
+# XcodeGen spec for the SOFLOW native iOS app.
+# Generates SOFLOW.xcodeproj from this YAML so we can build .ipa in CI
+# without committing a binary xcodeproj.
+#
+# Local generation (on a Mac, optional):
+#   brew install xcodegen
+#   xcodegen generate
+#
+# In GitHub Actions (we ship one):
+#   ios-rebuild/SOFLOW-iOS-Native/.github/workflows/build-native-ios.yml
+
+name: SOFLOW
+options:
+  bundleIdPrefix: com.dean.soflow
+  deploymentTarget:
+    iOS: '15.0'
+  developmentLanguage: en
+
+settings:
+  base:
+    SWIFT_VERSION: '5.9'
+    IPHONEOS_DEPLOYMENT_TARGET: '15.0'
+    TARGETED_DEVICE_FAMILY: '1'   # iPhone only
+    GENERATE_INFOPLIST_FILE: NO
+
+packages:
+  SOFLOWCore:
+    path: .
+
+targets:
+  SOFLOW:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources/SOFLOWApp
+        excludes:
+          - Info.plist
+    info:
+      path: Sources/SOFLOWApp/Info.plist
+    dependencies:
+      - package: SOFLOWCore
+        product: SOFLOWCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dean.soflow
+        PRODUCT_NAME: SOFLOW
+        INFOPLIST_FILE: Sources/SOFLOWApp/Info.plist
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
